@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 网页标题，显示在浏览器标签上 -->
+    <title>依次弹出的随机小弹窗</title>
+    <style>
+        /* 1. 定义小弹窗的基础样式（未显示状态） */
+        .random-modal {
+            position: fixed; /* 固定定位，不随页面滚动移动 */
+            border-radius: 8px; /* 弹窗圆角，更美观 */
+            color: white; /* 弹窗内文字颜色 */
+            display: flex; /* 弹性布局，用于让文字垂直水平居中 */
+            align-items: center; /* 垂直居中 */
+            justify-content: center; /* 水平居中 */
+            font-size: 14px; /* 文字大小 */
+            box-shadow: 0 3px 10px rgba(0,0,0,0.4); /* 弹窗阴影，增强立体感 */
+            z-index: 9999; /* 层级优先级，确保弹窗在最上层（不被遮挡） */
+            cursor: pointer; /* 鼠标悬浮时显示"小手"，提示可点击 */
+            opacity: 0; /* 初始状态：完全透明（隐藏） */
+            transform: scale(0.5); /* 初始状态：缩小到50%（隐藏） */
+            /* 定义过渡动画：透明度和缩放变化时，用0.8秒平滑过渡 */
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+
+        /* 2. 定义弹窗显示时的样式（通过JS动态添加该类） */
+        .random-modal.show {
+            opacity: 1; /* 显示状态：完全不透明 */
+            transform: scale(1); /* 显示状态：恢复原大小 */
+        }
+
+        /* 3. 定义"关闭所有"按钮的样式 */
+        .close-all {
+            position: fixed; /* 固定在页面底部，不随滚动移动 */
+            bottom: 30px; /* 距离页面底部30px */
+            left: 50%; /* 水平居中第一步：左对齐到页面中间 */
+            transform: translateX(-50%); /* 水平居中第二步：向左偏移自身50%，实现完美居中 */
+            padding: 10px 24px; /* 按钮内边距（上下10px，左右24px） */
+            font-size: 16px; /* 按钮文字大小 */
+            cursor: pointer; /* 提示可点击 */
+            z-index: 10000; /* 层级比弹窗高，确保按钮在弹窗之上不被遮挡 */
+            background: #333; /* 按钮背景色（深灰色） */
+            color: white; /* 按钮文字颜色 */
+            border: none; /* 去掉默认边框 */
+            border-radius: 4px; /* 按钮圆角 */
+        }
+    </style>
+</head>
+<body>
+    <!-- 网页正常内容：标题 -->
+    <h1>依次弹出的随机小弹窗</h1>
+    <!-- "关闭所有"按钮：点击时触发closeAllModals()函数 -->
+    <button class="close-all" onclick="closeAllModals()">关闭所有弹窗</button>
+
+    <!-- JS代码放在body末尾：确保HTML结构先加载完成，避免JS找不到元素 -->
+    <script>
+        const text=[
+            "鸡",
+            "你",
+            "太",
+            "美",
+            "了",
+            ]
+            
+        function getRandomInt() {
+            // Math.random()生成0-1的随机数，乘100得0-100，加50后范围变成50-150
+            return Math.floor(Math.random() *5); 
+        }    
+        function textwenzi() {
+            // Math.random()生成0-1的随机数，乘100得0-100，加50后范围变成50-150
+            const index=getRandomInt();
+            return text[index];
+        }    
+        
+        // 4. 页面加载完成后（所有HTML/CSS加载完毕），执行创建弹窗的函数
+        window.onload = function() {
+            createRandomModals(300); // 调用函数，创建50个随机弹窗（数量可自定义）
+        };
+
+        // 5. 工具函数1：生成随机颜色（rgba格式，最后一位0.8是透明度）
+        function getRandomColor() {
+            const r = Math.floor(Math.random() * 256); // 随机生成红色值（0-255）
+            const g = Math.floor(Math.random() * 256); // 随机生成绿色值（0-255）
+            const b = Math.floor(Math.random() * 256); // 随机生成蓝色值（0-255）
+            return `rgba(${r}, ${g}, ${b}, 0.8)`; // 组合成rgba颜色字符串返回
+        }
+
+        // 6. 工具函数2：生成随机弹窗尺寸（50-150px之间）
+        function getRandomSize() {
+            // Math.random()生成0-1的随机数，乘100得0-100，加50后范围变成50-150
+            return Math.floor(Math.random() * 150) + 100; 
+        }
+        
+        
+
+        // 7. 工具函数3：生成随机弹窗位置（确保弹窗完全在屏幕内，不超出边界）
+        function getRandomPos(size) {
+            // 计算弹窗左移的最大距离（屏幕宽度 - 弹窗宽度，避免右边超出）
+            const maxLeft = window.innerWidth - size;
+            // 计算弹窗上移的最大距离（屏幕高度 - 弹窗高度，避免下边超出）
+            const maxTop = window.innerHeight - size;
+            // 返回随机的left（左距离）和top（上距离）
+            return {
+                left: Math.floor(Math.random() * maxLeft),
+                top: Math.floor(Math.random() * maxTop)
+            };
+        }
+
+        // 8. 核心函数：创建指定数量的随机弹窗，并实现依次弹出效果
+        function createRandomModals(count) {
+            // 循环count次，每次创建一个弹窗（count是传入的弹窗总数，这里是50）
+            for (let i = 0; i < count; i++) {
+                // ① 创建一个div元素，作为小弹窗的容器
+                const modal = document.createElement('div');
+                // ② 给弹窗添加基础样式类（对应CSS中的.random-modal）
+                modal.className = 'random-modal';
+                // ③ 给弹窗添加文字内容（显示"弹窗1、弹窗2..."）
+                modal.innerText = textwenzi();
+                // ④ 调用工具函数，给弹窗设置随机背景色
+                modal.style.backgroundColor = getRandomColor();
+                // ⑤ 调用工具函数，获取随机尺寸并设置给弹窗
+                const size = getRandomSize();
+                modal.style.width = `${size}px`; // 设置宽度
+                modal.style.height = `${size*0.6}px`; // 设置高度（和宽度一致，成正方形）
+                // ⑥ 调用工具函数，获取随机位置并设置给弹窗
+                const pos = getRandomPos(size);
+                modal.style.left = `${pos.left}px`; // 设置距离左边的位置
+                modal.style.top = `${pos.top}px`; // 设置距离上边的位置
+                // ⑦ 给弹窗添加点击事件：点击单个弹窗时，删除该弹窗
+                modal.onclick = function() {
+                    this.remove(); // this指代当前被点击的弹窗元素
+                };
+                // ⑧ 将创建好的弹窗添加到页面中（body标签内）
+                document.body.appendChild(modal);
+
+                // ⑨ 关键：实现依次弹出效果
+                // 第i个弹窗延迟 i*100ms 后显示（例如：第1个0ms，第2个100ms，第3个200ms...）
+                // 间隔100ms，50个弹窗会在5秒内陆续弹出，避免同时出现
+                setTimeout(() => {
+                    modal.classList.add('show'); // 给弹窗添加show类，触发显示动画
+                }, i * 10); 
+            }
+        }
+
+        // 9. 关闭所有弹窗的函数
+        function closeAllModals() {
+            // ① 选择页面中所有类名为random-modal的元素（即所有小弹窗）
+            const allModals = document.querySelectorAll('.random-modal');
+            // ② 循环遍历所有弹窗，逐个删除
+            allModals.forEach(modal => modal.remove());
+        }
+    </script>
+</body>
+</html>
